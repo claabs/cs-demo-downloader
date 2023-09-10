@@ -1,0 +1,25 @@
+{
+  "extends": [
+    "@tsconfig/strictest/tsconfig",
+    "@tsconfig/node18/tsconfig",
+    "@tsconfig/esm/tsconfig",
+  ],
+  "compilerOptions": {
+    "lib": [
+      "es2023",
+      "DOM",
+    ],
+    "typeRoots": [
+      "node_modules/@types",
+    ],
+    "outDir": "dist",
+  },
+  "include": [
+    "**/*.ts",
+    ".*.js",
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
+}
