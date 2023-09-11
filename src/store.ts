@@ -2,7 +2,7 @@ import { outputJSON, readJSON } from 'fs-extra/esm';
 
 export interface Store {
   lastCodeDemoId: Record<string, string>;
-  lastGcpdDemoDate: Record<string, string>;
+  lastContinueToken: Record<string, string>;
   refreshToken: Record<string, string>;
 }
 
@@ -17,7 +17,7 @@ export const readStore = async (): Promise<Store> => {
   } catch (err) {
     console.warn(err);
   }
-  return { lastCodeDemoId: {}, lastGcpdDemoDate: {}, refreshToken: {} };
+  return { lastCodeDemoId: {}, lastContinueToken: {}, refreshToken: {} };
 };
 
 export const getStoreValue = async (

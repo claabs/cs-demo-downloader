@@ -1,4 +1,4 @@
-import { getDemos } from './gcpd';
+import { getAllGcpdDemos } from './gcpd';
 
 export interface Config {
   authCodes: string[];
@@ -11,6 +11,6 @@ export interface User {
   secret: string;
 }
 
-getDemos().catch((err) => {
+getAllGcpdDemos().catch((err) => {
   console.error(err);
 });
