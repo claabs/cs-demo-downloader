@@ -48,10 +48,10 @@ const parseCsgoMatchList = (html: string, minMatchIdBound?: bigint): ParseListRe
     const url = urlElement.getAttribute('href');
     const urlMatch = url?.match(/^https?:\/\/replay\d+\.valve\.net\/730\/(\d+)_\d+\.dem\.bz2$/);
     if (!url || !urlMatch) break; // something is weird if this happens
-    const matchIdStr = urlMatch.at(0);
+    const matchIdStr = urlMatch.at(1);
     if (!matchIdStr) break;
     const matchId = BigInt(matchIdStr);
-    if (minMatchIdBound && matchId < minMatchIdBound) {
+    if (minMatchIdBound && matchId <= minMatchIdBound) {
       // if this match is older or as old as the latest match we've found previously, we don't need to upload it (or any following matches)
       finished = true;
       break;
@@ -85,21 +85,24 @@ export const getTabDemos = async (
     },
   });
 
-  const continueTokenMatch = initResp.data.match(/g_sGcContinueToken = '([0-9]+)'/g);
+  const continueTokenMatch = initResp.data.match(/g_sGcContinueToken = '(\d+)'/);
   if (!continueTokenMatch) throw new Error('Could not get document continue token');
-  let continueToken = continueTokenMatch.at(0);
-  if (!continueToken) throw new Error('Could not get document continue token match group');
+  let continueToken = continueTokenMatch.at(1);
 
-  const sessionIdMatch = initResp.data.match(/g_sessionID = "([0-9a-f]{24})"/g);
+  const sessionIdMatch = initResp.data.match(/g_sessionID = "([0-9a-f]{24})"/);
   if (!sessionIdMatch) throw new Error('Could not get document session ID');
-  const sessionId = sessionIdMatch.at(0);
+  const sessionId = sessionIdMatch.at(1);
   if (!sessionId) throw new Error('Could not get document session ID match group');
 
   const initParseResult = parseCsgoMatchList(initResp.data, minContinueToken);
   let { finished } = initParseResult;
   const parsedMatches = initParseResult.newMatches;
 
-  while (!finished && continueToken) {
+  while (
+    !finished &&
+    continueToken &&
+    !(minContinueToken && BigInt(continueToken) < minContinueToken)
+  ) {
     // fix with some async iterator??
     // eslint-disable-next-line no-await-in-loop
     const continueResp = (await axios.get<ContinueResponse>(
@@ -124,10 +127,6 @@ export const getTabDemos = async (
     const continueParseResult = parseCsgoMatchList(continueResp.data.html, minContinueToken);
     finished = continueParseResult.finished;
     parsedMatches.push(...continueParseResult.newMatches);
-
-    if (!continueToken || (minContinueToken && BigInt(continueToken) < minContinueToken)) {
-      finished = true;
-    }
   }
   return parsedMatches;
 };

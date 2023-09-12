@@ -13,6 +13,7 @@
       "node_modules/@types",
     ],
     "outDir": "dist",
+    "inlineSourceMap": true,
   },
   "include": [
     "**/*.ts",
