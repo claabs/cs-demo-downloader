@@ -10,6 +10,7 @@ export interface GcpdMatch {
   date: Date;
   url: string;
   matchId: bigint;
+  type?: string;
 }
 
 export interface ParseListResult {
@@ -27,7 +28,21 @@ export interface ContinueResponse {
 const userAgent =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36';
 
-const parseCsgoMatchList = (html: string, minMatchIdBound?: bigint): ParseListResult => {
+const tabToType = (tab: string): string | undefined => {
+  const convertMap: Record<string, string> = {
+    matchhistorycompetitive: 'ranked',
+    matchhistorypremier: 'premier',
+    matchhistoryscrimmage: 'unranked',
+    matchhistorywingman: 'wingman',
+  };
+  return convertMap[tab];
+};
+
+const parseCsgoMatchList = (
+  html: string,
+  type?: string,
+  minMatchIdBound?: bigint,
+): ParseListResult => {
   const dom = new JSDOM(html).window;
   // inspired by https://github.com/leetify/leetify-gcpd-upload/blob/main/src/offscreen/dom-parser.ts
   const cells = dom.document.querySelectorAll('td.val_left');
@@ -63,12 +78,12 @@ const parseCsgoMatchList = (html: string, minMatchIdBound?: bigint): ParseListRe
     const dateText = dateElement?.innerHTML?.trim();
     if (!dateText?.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} GMT$/)) break; // something is weird if this happens
     const date = new Date(dateText);
-    matches.push({ date, url, matchId });
+    matches.push({ date, url, matchId, type });
   }
   return { newMatches: matches, finished };
 };
 
-export const getTabDemos = async (
+export const getTabMatches = async (
   cookies: string[],
   tab: string,
   minContinueToken?: bigint,
@@ -94,7 +109,8 @@ export const getTabDemos = async (
   const sessionId = sessionIdMatch.at(1);
   if (!sessionId) throw new Error('Could not get document session ID match group');
 
-  const initParseResult = parseCsgoMatchList(initResp.data, minContinueToken);
+  const type = tabToType(tab);
+  const initParseResult = parseCsgoMatchList(initResp.data, type, minContinueToken);
   let { finished } = initParseResult;
   const parsedMatches = initParseResult.newMatches;
 
@@ -124,14 +140,14 @@ export const getTabDemos = async (
 
     continueToken = continueResp.data.continue_token;
 
-    const continueParseResult = parseCsgoMatchList(continueResp.data.html, minContinueToken);
+    const continueParseResult = parseCsgoMatchList(continueResp.data.html, type, minContinueToken);
     finished = continueParseResult.finished;
     parsedMatches.push(...continueParseResult.newMatches);
   }
   return parsedMatches;
 };
 
-export const getDemos = async (userLogin: User): Promise<GcpdMatch[]> => {
+export const getMatches = async (userLogin: User): Promise<GcpdMatch[]> => {
   const cookies = await loginSteam(userLogin);
   const minContinueTokenStr = await getStoreValue('lastContinueToken', userLogin.username);
   const minContinueToken = minContinueTokenStr ? BigInt(minContinueTokenStr) : undefined;
@@ -146,7 +162,7 @@ export const getDemos = async (userLogin: User): Promise<GcpdMatch[]> => {
   const newDemos = (
     await Promise.all(
       tabs.map((tab) =>
-        queue.add(() => getTabDemos(cookies, tab, minContinueToken), { throwOnTimeout: true }),
+        queue.add(() => getTabMatches(cookies, tab, minContinueToken), { throwOnTimeout: true }),
       ),
     )
   ).flat();
@@ -165,8 +181,12 @@ export const getDemos = async (userLogin: User): Promise<GcpdMatch[]> => {
   return newDemos;
 };
 
-export const getAllGcpdDemos = async () => {
+export const getNewGcpdMatches = async (): Promise<GcpdMatch[]> => {
   const config = JSON.parse(fs.readFileSync('config/config.json', 'utf-8')) as Config;
   const queue = new PQueue({ concurrency: 1 });
-  await Promise.all(config.users.map((user) => queue.add(() => getDemos(user))));
+  return (
+    await Promise.all(
+      config.users.map((user) => queue.add(() => getMatches(user), { throwOnTimeout: true })),
+    )
+  ).flat();
 };

@@ -5,6 +5,7 @@
     "@tsconfig/esm/tsconfig",
   ],
   "compilerOptions": {
+    "exactOptionalPropertyTypes": false,
     "lib": [
       "es2023",
       "DOM",

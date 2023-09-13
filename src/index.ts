@@ -1,4 +1,5 @@
-import { getAllGcpdDemos } from './gcpd';
+import { downloadSaveGcpdDemos } from './download';
+import { getNewGcpdMatches } from './gcpd';
 
 export interface Config {
   authCodes: string[];
@@ -11,6 +12,11 @@ export interface User {
   secret: string;
 }
 
-getAllGcpdDemos().catch((err) => {
+const main = async () => {
+  const matches = await getNewGcpdMatches();
+  await downloadSaveGcpdDemos(matches);
+};
+
+main().catch((err) => {
   console.error(err);
 });
