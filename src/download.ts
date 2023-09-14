@@ -22,12 +22,18 @@ export const gcpdUrlToFilename = (url: string, suffix?: string): string => {
 };
 
 export const downloadSaveGcpdDemo = async (match: GcpdMatch): Promise<void> => {
-  await fsx.mkdirp('demos');
-  const filename = path.join('demos', gcpdUrlToFilename(match.url, match.type));
-  // TODO: check if match already downloaded
-  const resp = await axios.get<stream.Duplex>(match.url, { responseType: 'stream' });
-  await pipeline(resp.data, bz2(), fs.createWriteStream(filename, 'binary'));
-  await fsp.utimes(filename, match.date, match.date);
+  try {
+    await fsx.mkdirp('demos');
+    const filename = path.join('demos', gcpdUrlToFilename(match.url, match.type));
+    const exists = await fsx.exists(filename);
+    if (!exists) {
+      const resp = await axios.get<stream.Duplex>(match.url, { responseType: 'stream' });
+      await pipeline(resp.data, bz2(), fs.createWriteStream(filename, 'binary'));
+      await fsp.utimes(filename, match.date, match.date);
+    }
+  } catch (err) {
+    console.error(err);
+  }
 };
 
 export const downloadSaveGcpdDemos = async (matches: GcpdMatch[]): Promise<void> => {

@@ -1,8 +1,7 @@
 import axios, { type AxiosResponse } from 'axios';
-import fs from 'node:fs';
 import { JSDOM } from 'jsdom';
 import PQueue from 'p-queue';
-import type { Config, User } from '.';
+import type { User } from '.';
 import { loginSteam } from './steam';
 import { getStoreValue, setStoreValue } from './store';
 
@@ -179,14 +178,4 @@ export const getMatches = async (userLogin: User): Promise<GcpdMatch[]> => {
   }
 
   return newDemos;
-};
-
-export const getNewGcpdMatches = async (): Promise<GcpdMatch[]> => {
-  const config = JSON.parse(fs.readFileSync('config/config.json', 'utf-8')) as Config;
-  const queue = new PQueue({ concurrency: 1 });
-  return (
-    await Promise.all(
-      config.users.map((user) => queue.add(() => getMatches(user), { throwOnTimeout: true })),
-    )
-  ).flat();
 };

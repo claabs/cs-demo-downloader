@@ -4,6 +4,7 @@
   "description": "Automatically download Counter-Strike demos of ranked, unranked, and wingman matches",
   "main": "dist/index.js",
   "scripts": {
+    "start": "node --loader @swc-node/register/esm src/index.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
