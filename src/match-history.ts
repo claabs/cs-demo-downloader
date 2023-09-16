@@ -1,6 +1,6 @@
 // https://api.steampowered.com/ICSGOPlayers_730/GetNextMatchSharingCode/v1?key=XXX&steamid=765XXX&steamidkey=AAAA-AAAAA-AAAA&knowncode=CSGO-ZT42K-Jxxxx-Kxxxx-5xxxx-Oixxx
 import axios from 'axios';
-import { config } from './config';
+import { config } from './config.js';
 
 export interface MatchHistoryResponse {
   result: {

@@ -1,10 +1,10 @@
 import PQueue from 'p-queue';
-import { downloadSaveGcpdDemo } from './download';
-import { getMatches } from './gcpd';
-import type { User } from './config';
-import { config } from './config';
-import { setStoreValue } from './store';
-import logger from './logger';
+import { downloadSaveGcpdDemo } from './download.js';
+import { getMatches } from './gcpd.js';
+import type { User } from './config.js';
+import { config } from './config.js';
+import { setStoreValue } from './store.js';
+import logger from './logger.js';
 
 const handleGcpdUser = async (user: User, gcpdQueue: PQueue, downloadQueue: PQueue) => {
   const L = logger.child({ username: user.username });
@@ -43,5 +43,5 @@ const main = async () => {
 };
 
 main().catch((err) => {
-  console.error(err);
+  logger.error(err);
 });

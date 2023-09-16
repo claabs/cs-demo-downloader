@@ -1,5 +1,6 @@
 import { outputJSON, readJSON } from 'fs-extra/esm';
-import L from './logger';
+import path from 'node:path';
+import L from './logger.js';
 
 export interface Store {
   lastCodeDemoId: Record<string, string>;
@@ -7,7 +8,8 @@ export interface Store {
   refreshToken: Record<string, string>;
 }
 
-const storeFile = 'config/store.json';
+const configDir = process.env['CONFIG_DIR'] || 'config';
+const storeFile = path.join(configDir, 'store.json');
 
 export const readStore = async (): Promise<Store> => {
   try {

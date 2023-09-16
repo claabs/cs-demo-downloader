@@ -1,4 +1,5 @@
-import fs from 'node:fs';
+import { readJSONSync } from 'fs-extra/esm';
+import path from 'node:path';
 
 export interface Config {
   authCodes: AuthCodeUser[];
@@ -19,4 +20,7 @@ export interface User {
   secret: string;
 }
 
-export const config = JSON.parse(fs.readFileSync('config/config.json', 'utf-8')) as Config;
+const configDir = process.env['CONFIG_DIR'] || 'config';
+const configFile = path.join(configDir, 'config.json');
+
+export const config = readJSONSync(configFile, 'utf-8') as Config;

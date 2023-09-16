@@ -6,10 +6,11 @@ import fsx from 'fs-extra';
 import util from 'node:util';
 import stream from 'node:stream';
 import path from 'node:path';
-import type { GcpdMatch } from './gcpd';
-import L from './logger';
+import type { GcpdMatch } from './gcpd.js';
+import L from './logger.js';
 
 const pipeline = util.promisify(stream.pipeline);
+const demosDir = process.env['DEMOS_DIR'] || 'demos';
 
 export const gcpdUrlToFilename = (url: string, suffix?: string): string => {
   // http://replay129.valve.net/730/003638895521671676017_1102521424.dem.bz2
@@ -23,8 +24,8 @@ export const gcpdUrlToFilename = (url: string, suffix?: string): string => {
 
 export const downloadSaveGcpdDemo = async (match: GcpdMatch): Promise<void> => {
   try {
-    await fsx.mkdirp('demos');
-    const filename = path.join('demos', gcpdUrlToFilename(match.url, match.type));
+    await fsx.mkdirp(demosDir);
+    const filename = path.join(demosDir, gcpdUrlToFilename(match.url, match.type));
     const exists = await fsx.exists(filename);
     if (!exists) {
       L.trace({ url: match.url }, 'Downloading demo');

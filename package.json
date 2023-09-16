@@ -3,9 +3,13 @@
   "version": "1.0.0",
   "description": "Automatically download Counter-Strike demos of ranked, unranked, and wingman matches",
   "main": "dist/index.js",
+  "type": "module",
   "scripts": {
     "start": "node --loader tsx src/index.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "rimraf dist && tsc",
+    "lint": "tsc --noEmit && eslint .",
+    "docker:build": "docker build . -t cs-demo-downloader:latest --target deploy",
+    "docker:run": "docker run --rm -ti -v $(pwd)/config:/config -v $(pwd)/demos:/demos cs-demo-downloader:latest"
   },
   "author": "",
   "license": "MIT",
@@ -22,8 +26,6 @@
     "unbzip2-stream": "^1.4.3"
   },
   "devDependencies": {
-    "@swc-node/register": "^1.6.7",
-    "@tsconfig/esm": "^1.0.4",
     "@tsconfig/node18": "^18.2.1",
     "@tsconfig/strictest": "^2.0.1",
     "@types/fs-extra": "^11.0.1",
@@ -42,6 +44,7 @@
     "eslint-plugin-prettier": "^5.0.0",
     "eslint-plugin-promise": "^6.1.1",
     "prettier": "^3.0.2",
+    "rimraf": "^5.0.1",
     "tsx": "^3.12.10",
     "typescript": "^5.2.2"
   },

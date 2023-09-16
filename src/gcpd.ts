@@ -2,10 +2,10 @@ import axios, { type AxiosResponse } from 'axios';
 import { JSDOM } from 'jsdom';
 import PQueue from 'p-queue';
 import type { Logger } from 'pino';
-import { loginSteam } from './steam';
-import { getStoreValue } from './store';
-import type { User } from './config';
-import logger from './logger';
+import { loginSteam } from './steam.js';
+import { getStoreValue } from './store.js';
+import type { User } from './config.js';
+import logger from './logger.js';
 
 export interface GcpdMatch {
   date: Date;

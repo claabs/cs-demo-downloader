@@ -2,9 +2,9 @@
 import { LoginSession, EAuthTokenPlatformType } from 'steam-session';
 import SteamTotp from 'steam-totp';
 
-import { getStoreValue, setStoreValue } from './store';
-import type { User } from './config';
-import logger from './logger';
+import { getStoreValue, setStoreValue } from './store.js';
+import type { User } from './config.js';
+import logger from './logger.js';
 
 export const loginSteam = async (user: User): Promise<string[]> => {
   const L = logger.child({ username: user.username });

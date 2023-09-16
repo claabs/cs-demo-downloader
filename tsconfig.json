@@ -2,10 +2,14 @@
   "extends": [
     "@tsconfig/strictest/tsconfig",
     "@tsconfig/node18/tsconfig",
-    "@tsconfig/esm/tsconfig",
   ],
   "compilerOptions": {
+    // ESM
+    "module": "node16",
+    "moduleResolution": "node16",
+    // Disable extra strict rules
     "exactOptionalPropertyTypes": false,
+    // Handle DOM types
     "lib": [
       "es2023",
       "DOM",
@@ -13,12 +17,14 @@
     "typeRoots": [
       "node_modules/@types",
     ],
+    // Output
     "outDir": "dist",
-    "inlineSourceMap": true,
+    "inlineSourceMap": true, // Sourcemaps for debugging
+    "rootDir": ".", // Make dist layout the same between local and docker
   },
   "include": [
     "**/*.ts",
-    ".*.js",
+    ".*.cjs",
   ],
   "exclude": [
     "node_modules",
