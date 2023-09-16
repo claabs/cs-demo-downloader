@@ -8,9 +8,6 @@ Downloads the demo and updates the modified date file metadata to the timestamp 
 
 ```json5
 {
-    "authCodes": [
-        "ABCD-9999-XXXX"
-    ],
     "users": [
         {
             "username": "mysteamusername",

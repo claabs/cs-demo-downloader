@@ -6,6 +6,10 @@ export interface Config {
   users: User[];
   steamApiKey: string;
   logLevel?: string;
+  runOnStartup?: boolean;
+  runOnce?: boolean;
+  cronSchedule?: string;
+  timezone?: string;
 }
 
 export interface AuthCodeUser {

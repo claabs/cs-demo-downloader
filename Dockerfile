@@ -27,7 +27,14 @@ RUN npm run build
 FROM base as deploy
 
 RUN apk add --no-cache \
-    tini
+    jq \
+    supercronic \
+    tini \
+    tzdata
+
+COPY entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+# backwards compat entrypoint
+RUN ln -s /usr/local/bin/docker-entrypoint.sh / 
 
 COPY package*.json ./
 RUN npm ci --omit=dev
@@ -41,5 +48,4 @@ ENV NODE_ENV=production CONFIG_DIR=/config DEMOS_DIR=/demos
 VOLUME [ "/config" ]
 VOLUME [ "/demos" ]
 
-ENTRYPOINT ["/sbin/tini", "--"]
-CMD [ "node", "/usr/app/dist/src/index.js" ]
+ENTRYPOINT ["tini", "--", "docker-entrypoint.sh"]
