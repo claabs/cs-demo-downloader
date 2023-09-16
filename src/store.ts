@@ -1,4 +1,5 @@
 import { outputJSON, readJSON } from 'fs-extra/esm';
+import L from './logger';
 
 export interface Store {
   lastCodeDemoId: Record<string, string>;
@@ -15,7 +16,7 @@ export const readStore = async (): Promise<Store> => {
       return store;
     }
   } catch (err) {
-    console.warn(err);
+    L.warn({ err }, 'Error reading store JSON');
   }
   return { lastCodeDemoId: {}, lastContinueToken: {}, refreshToken: {} };
 };
@@ -37,6 +38,7 @@ export const setStoreValue = async (
   accountName: string,
   value: string,
 ): Promise<void> => {
+  L.trace({ type, accountName, value }, 'Setting store value');
   const store = await readStore();
   if (!store[type]) {
     store[type] = {};

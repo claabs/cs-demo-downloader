@@ -4,6 +4,7 @@ export interface Config {
   authCodes: AuthCodeUser[];
   users: User[];
   steamApiKey: string;
+  logLevel?: string;
 }
 
 export interface AuthCodeUser {

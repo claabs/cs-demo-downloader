@@ -7,6 +7,7 @@ import util from 'node:util';
 import stream from 'node:stream';
 import path from 'node:path';
 import type { GcpdMatch } from './gcpd';
+import L from './logger';
 
 const pipeline = util.promisify(stream.pipeline);
 
@@ -26,13 +27,17 @@ export const downloadSaveGcpdDemo = async (match: GcpdMatch): Promise<void> => {
     const filename = path.join('demos', gcpdUrlToFilename(match.url, match.type));
     const exists = await fsx.exists(filename);
     if (!exists) {
+      L.trace({ url: match.url }, 'Downloading demo');
       const resp = await axios.get<stream.Duplex>(match.url, { responseType: 'stream' });
+      L.trace({ url: match.url }, 'Demo download complete');
       await pipeline(resp.data, bz2(), fs.createWriteStream(filename, 'binary'));
+      L.trace({ filename }, 'Demo saved to file');
       await fsp.utimes(filename, match.date, match.date);
+      L.trace({ filename, date: match.date }, 'Update file modified date');
     } else {
-      console.log(`File already exists, skipping ${filename}`);
+      L.info({ filename }, 'File already exists, skipping download');
     }
   } catch (err) {
-    console.error(err);
+    L.error({ err }, 'Error downloading GCPD demo');
   }
 };

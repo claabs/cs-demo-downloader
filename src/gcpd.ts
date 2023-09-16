@@ -1,9 +1,11 @@
 import axios, { type AxiosResponse } from 'axios';
 import { JSDOM } from 'jsdom';
 import PQueue from 'p-queue';
+import type { Logger } from 'pino';
 import { loginSteam } from './steam';
 import { getStoreValue } from './store';
 import type { User } from './config';
+import logger from './logger';
 
 export interface GcpdMatch {
   date: Date;
@@ -85,9 +87,12 @@ const parseCsgoMatchList = (
 export const getTabMatches = async (
   cookies: string[],
   tab: string,
+  log: Logger,
   minContinueToken?: bigint,
   gameId = 730,
 ): Promise<GcpdMatch[]> => {
+  const L = log.child({ tab });
+  L.debug({ gameId, minContinueToken }, 'Getting match tab data');
   const initResp = await axios.get<string>(`https://steamcommunity.com/my/gcpd/${gameId}`, {
     params: {
       tab,
@@ -112,7 +117,9 @@ export const getTabMatches = async (
   const initParseResult = parseCsgoMatchList(initResp.data, type, minContinueToken);
   let { finished } = initParseResult;
   const parsedMatches = initParseResult.newMatches;
+  L.debug({ parsedMatchesLength: parsedMatches.length }, 'Parsed init matches');
 
+  L.trace({ finished, continueToken, minContinueToken }, 'Attempting to get continued match lists');
   while (
     !finished &&
     continueToken &&
@@ -140,13 +147,23 @@ export const getTabMatches = async (
     continueToken = continueResp.data.continue_token;
 
     const continueParseResult = parseCsgoMatchList(continueResp.data.html, type, minContinueToken);
+    L.debug(
+      { parsedMatchesLength: continueParseResult.newMatches.length },
+      'Parsed continue matches',
+    );
+
     finished = continueParseResult.finished;
     parsedMatches.push(...continueParseResult.newMatches);
+    L.trace(
+      { finished, continueToken, minContinueToken },
+      'Attempting to get more continued match lists',
+    );
   }
   return parsedMatches;
 };
 
 export const getMatches = async (userLogin: User): Promise<GcpdMatch[]> => {
+  const L = logger.child({ username: userLogin.username });
   const cookies = await loginSteam(userLogin);
   const minContinueTokenStr = await getStoreValue('lastContinueToken', userLogin.username);
   const minContinueToken = minContinueTokenStr ? BigInt(minContinueTokenStr) : undefined;
@@ -161,7 +178,7 @@ export const getMatches = async (userLogin: User): Promise<GcpdMatch[]> => {
   const newDemos = (
     await Promise.all(
       tabs.map((tab) =>
-        queue.add(() => getTabMatches(cookies, tab, minContinueToken), { throwOnTimeout: true }),
+        queue.add(() => getTabMatches(cookies, tab, L, minContinueToken), { throwOnTimeout: true }),
       ),
     )
   ).flat();

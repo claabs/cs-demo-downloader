@@ -4,9 +4,19 @@ import { getMatches } from './gcpd';
 import type { User } from './config';
 import { config } from './config';
 import { setStoreValue } from './store';
+import logger from './logger';
 
 const handleGcpdUser = async (user: User, gcpdQueue: PQueue, downloadQueue: PQueue) => {
+  const L = logger.child({ username: user.username });
   const matches = await gcpdQueue.add(() => getMatches(user), { throwOnTimeout: true });
+  if (!matches.length) {
+    L.info('No new GCPD matches found');
+    return;
+  }
+
+  const demoUrls = matches.map((match) => match.url);
+  L.info({ matchCount: matches.length, demoUrls }, 'New GCPD matches found');
+  L.trace({ matches }, 'New GCPD match details');
   await Promise.all(
     matches.map((match) =>
       downloadQueue.add(() => downloadSaveGcpdDemo(match), { throwOnTimeout: true }),
@@ -25,6 +35,7 @@ const handleGcpdUser = async (user: User, gcpdQueue: PQueue, downloadQueue: PQue
 };
 
 const main = async () => {
+  logger.debug({ config }, 'Starting cs-demo-downloader');
   const gcpdQueue = new PQueue({ concurrency: 1, throwOnTimeout: true });
   const downloadQueue = new PQueue({ concurrency: 5, throwOnTimeout: true });
 
