@@ -1,8 +1,8 @@
 /* eslint-disable import/prefer-default-export */
 import { LoginSession, EAuthTokenPlatformType } from 'steam-session';
 import SteamTotp from 'steam-totp';
-import type { User } from '.';
 import { getStoreValue, setStoreValue } from './store';
+import type { User } from './config';
 
 export const loginSteam = async (user: User): Promise<string[]> => {
   const session = new LoginSession(EAuthTokenPlatformType.WebBrowser);

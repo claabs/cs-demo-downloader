@@ -1,9 +1,9 @@
 import axios, { type AxiosResponse } from 'axios';
 import { JSDOM } from 'jsdom';
 import PQueue from 'p-queue';
-import type { User } from '.';
 import { loginSteam } from './steam';
-import { getStoreValue, setStoreValue } from './store';
+import { getStoreValue } from './store';
+import type { User } from './config';
 
 export interface GcpdMatch {
   date: Date;
@@ -165,17 +165,6 @@ export const getMatches = async (userLogin: User): Promise<GcpdMatch[]> => {
       ),
     )
   ).flat();
-
-  // Set the latest match ID for a future run
-  const greatestMatchId = newDemos.reduce((greatestId, match) => {
-    if (!greatestId || match.matchId > greatestId) {
-      return match.matchId;
-    }
-    return greatestId;
-  }, minContinueToken);
-  if (greatestMatchId) {
-    setStoreValue('lastContinueToken', userLogin.username, greatestMatchId.toString());
-  }
 
   return newDemos;
 };

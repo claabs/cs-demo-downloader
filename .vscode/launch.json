@@ -10,7 +10,7 @@
             "name": "Debug Main",
             "runtimeArgs": [
                 "--loader",
-                "@swc-node/register/esm"
+                "tsx"
             ],
             "args": [
                 "${workspaceFolder}/src/index.ts"
