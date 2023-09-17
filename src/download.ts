@@ -22,7 +22,12 @@ export const gcpdUrlToFilename = (url: string, suffix?: string): string => {
   return `match${gameId}_${matchId}_${regionId}${suffix ? `_${suffix}` : ''}.dem`;
 };
 
-export const downloadSaveGcpdDemo = async (match: GcpdMatch): Promise<void> => {
+/**
+ * Downloads, extracts, and updates modified date of demo
+ * @param match Match metadata
+ * @returns matchId if match failed
+ */
+export const downloadSaveGcpdDemo = async (match: GcpdMatch): Promise<bigint | null> => {
   try {
     await fsx.mkdirp(demosDir);
     const filename = path.join(demosDir, gcpdUrlToFilename(match.url, match.type));
@@ -38,7 +43,9 @@ export const downloadSaveGcpdDemo = async (match: GcpdMatch): Promise<void> => {
     } else {
       L.info({ filename }, 'File already exists, skipping download');
     }
+    return null;
   } catch (err) {
     L.error({ err }, 'Error downloading GCPD demo');
+    return match.matchId;
   }
 };
