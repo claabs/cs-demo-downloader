@@ -35,6 +35,7 @@ const tabToType = (tab: string): string | undefined => {
     matchhistorypremier: 'premier',
     matchhistoryscrimmage: 'unranked',
     matchhistorywingman: 'wingman',
+    matchhistorycompetitivepermap: 'competitive',
   };
   return convertMap[tab];
 };
@@ -169,10 +170,11 @@ export const getMatches = async (userLogin: User): Promise<GcpdMatch[]> => {
   const minContinueToken = minContinueTokenStr ? BigInt(minContinueTokenStr) : undefined;
 
   const tabs = [
-    'matchhistorycompetitive',
+    'matchhistorycompetitive', // Deprecated?
     'matchhistorypremier',
-    'matchhistoryscrimmage',
+    'matchhistoryscrimmage', // Deprecated?
     'matchhistorywingman',
+    'matchhistorycompetitivepermap',
   ];
   const queue = new PQueue({ concurrency: 1 });
   const newDemos = (
