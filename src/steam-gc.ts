@@ -66,7 +66,7 @@ export const getAllUsersMatches = async (
 ): Promise<void> => {
   if (!config.authCodeLogin) throw new Error('Missing auth code login credentials');
   const L = logger.child({ username: config.authCodeLogin.username });
-  const shareCodesQueue = new PQueue({ concurrency: 1, interval: 300, intervalCap: 1 });
+  const shareCodesQueue = new PQueue({ concurrency: 1, interval: 1500, intervalCap: 1 });
   const usersShareCodeIds = await Promise.all(
     users.map(async (user) => getUserShareCodes(user, shareCodesQueue)),
   );
