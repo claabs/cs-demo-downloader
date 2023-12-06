@@ -2,20 +2,14 @@ import axios, { type AxiosResponse } from 'axios';
 import { JSDOM } from 'jsdom';
 import PQueue from 'p-queue';
 import type { Logger } from 'pino';
-import { loginSteam } from './steam.js';
+import { loginSteamWeb } from './steam.js';
 import { getStoreValue } from './store.js';
-import type { User } from './config.js';
+import type { LoginCredential } from './config.js';
 import logger from './logger.js';
-
-export interface GcpdMatch {
-  date: Date;
-  url: string;
-  matchId: bigint;
-  type?: string;
-}
+import { DownloadableMatch } from './download.js';
 
 export interface ParseListResult {
-  newMatches: GcpdMatch[];
+  newMatches: DownloadableMatch[];
   finished: boolean;
 }
 
@@ -49,7 +43,7 @@ const parseCsgoMatchList = (
   // inspired by https://github.com/leetify/leetify-gcpd-upload/blob/main/src/offscreen/dom-parser.ts
   const cells = dom.document.querySelectorAll('td.val_left');
 
-  const matches: GcpdMatch[] = [];
+  const matches: DownloadableMatch[] = [];
   let finished = false;
   // eslint-disable-next-line no-restricted-syntax
   for (const matchCell of cells) {
@@ -91,7 +85,7 @@ export const getTabMatches = async (
   log: Logger,
   minContinueToken?: bigint,
   gameId = 730,
-): Promise<GcpdMatch[]> => {
+): Promise<DownloadableMatch[]> => {
   const L = log.child({ tab });
   L.debug({ gameId, minContinueToken }, 'Getting match tab data');
   const initResp = await axios.get<string>(`https://steamcommunity.com/my/gcpd/${gameId}`, {
@@ -163,9 +157,9 @@ export const getTabMatches = async (
   return parsedMatches;
 };
 
-export const getMatches = async (userLogin: User): Promise<GcpdMatch[]> => {
+export const getMatches = async (userLogin: LoginCredential): Promise<DownloadableMatch[]> => {
   const L = logger.child({ username: userLogin.username });
-  const cookies = await loginSteam(userLogin);
+  const cookies = await loginSteamWeb(userLogin);
   const minContinueTokenStr = await getStoreValue('lastContinueToken', userLogin.username);
   const minContinueToken = minContinueTokenStr ? BigInt(minContinueTokenStr) : undefined;
 

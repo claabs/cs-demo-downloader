@@ -16,5 +16,5 @@ module.exports = {
   parserOptions: {
     project: './tsconfig.json',
   },
-  ignorePatterns: ['dist/**', 'node_modules/**', '!.*.cjs'],
+  ignorePatterns: ['dist/', 'node_modules/', '!.*.cjs'],
 };

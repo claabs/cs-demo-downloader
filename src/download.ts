@@ -6,8 +6,14 @@ import fsx from 'fs-extra';
 import util from 'node:util';
 import stream from 'node:stream';
 import path from 'node:path';
-import type { GcpdMatch } from './gcpd.js';
 import L from './logger.js';
+
+export interface DownloadableMatch {
+  date: Date;
+  url?: string;
+  matchId: bigint;
+  type?: string;
+}
 
 const pipeline = util.promisify(stream.pipeline);
 const demosDir = process.env['DEMOS_DIR'] || 'demos';
@@ -27,8 +33,9 @@ export const gcpdUrlToFilename = (url: string, suffix?: string): string => {
  * @param match Match metadata
  * @returns matchId if match failed
  */
-export const downloadSaveGcpdDemo = async (match: GcpdMatch): Promise<bigint | null> => {
+export const downloadSaveDemo = async (match: DownloadableMatch): Promise<bigint | null> => {
   try {
+    if (!match.url) throw new Error('Match download URL missing');
     await fsx.mkdirp(demosDir);
     const filename = path.join(demosDir, gcpdUrlToFilename(match.url, match.type));
     const exists = await fsx.exists(filename);
@@ -45,7 +52,7 @@ export const downloadSaveGcpdDemo = async (match: GcpdMatch): Promise<bigint | n
     }
     return null;
   } catch (err) {
-    L.error({ err }, 'Error downloading GCPD demo');
+    L.error({ err, match }, 'Error downloading GCPD demo');
     return match.matchId;
   }
 };

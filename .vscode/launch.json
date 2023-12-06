@@ -12,6 +12,7 @@
                 "--loader",
                 "tsx"
             ],
+            "outputCapture": "std",
             "args": [
                 "${workspaceFolder}/src/index.ts"
             ]

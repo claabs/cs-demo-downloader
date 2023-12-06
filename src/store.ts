@@ -6,6 +6,7 @@ export interface Store {
   lastCodeDemoId: Record<string, string>;
   lastContinueToken: Record<string, string>;
   refreshToken: Record<string, string>;
+  lastShareCode: Record<string, string>;
 }
 
 const configDir = process.env['CONFIG_DIR'] || 'config';
@@ -20,7 +21,7 @@ export const readStore = async (): Promise<Store> => {
   } catch (err) {
     L.warn({ err }, 'Error reading store JSON');
   }
-  return { lastCodeDemoId: {}, lastContinueToken: {}, refreshToken: {} };
+  return { lastCodeDemoId: {}, lastContinueToken: {}, refreshToken: {}, lastShareCode: {} };
 };
 
 export const getStoreValue = async (

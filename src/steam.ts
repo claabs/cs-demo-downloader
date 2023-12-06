@@ -1,14 +1,15 @@
 /* eslint-disable import/prefer-default-export */
 import { LoginSession, EAuthTokenPlatformType } from 'steam-session';
 import SteamTotp from 'steam-totp';
+import SteamUser from 'steam-user';
 
 import { getStoreValue, setStoreValue } from './store.js';
-import type { User } from './config.js';
+import type { LoginCredential } from './config.js';
 import logger from './logger.js';
 
-export const loginSteam = async (user: User): Promise<string[]> => {
+export const loginSteamWeb = async (user: LoginCredential): Promise<string[]> => {
   const L = logger.child({ username: user.username });
-  L.debug('Logging user into steam');
+  L.debug('Logging user into steam web session');
   const session = new LoginSession(EAuthTokenPlatformType.WebBrowser);
   const refreshToken = await getStoreValue('refreshToken', user.username);
 
@@ -42,4 +43,46 @@ export const loginSteam = async (user: User): Promise<string[]> => {
   L.debug('Steam login successful');
   await setStoreValue('refreshToken', user.username, session.refreshToken);
   return cookies;
+};
+
+export const loginSteamClient = async (user: LoginCredential): Promise<SteamUser> => {
+  const L = logger.child({ username: user.username });
+  L.debug('Logging user into steam client');
+  const steamUser = new SteamUser();
+  const refreshToken = await getStoreValue('refreshToken', user.username);
+
+  const waitForAuthentication = new Promise<void>((resolve) => {
+    steamUser.once('loggedOn', () => {
+      resolve();
+    });
+  });
+
+  const waitForRefreshToken = new Promise<string>((resolve) => {
+    steamUser.once('refreshToken' as never, (_refreshToken: string) => {
+      resolve(_refreshToken);
+    });
+  });
+
+  if (refreshToken) {
+    L.trace('Logging into Steam with refresh token');
+
+    steamUser.logOn({ refreshToken });
+    // session.renewRefreshToken() // This probably won't work, so we'll just let the refresh token expire
+    await waitForAuthentication;
+  } else {
+    L.trace('Getting Steam Guard auth code');
+    const authCode = SteamTotp.getAuthCode(user.secret);
+
+    L.debug('Logging into Steam with password');
+    steamUser.logOn({
+      accountName: user.username,
+      password: user.password,
+      twoFactorCode: authCode,
+    });
+    await waitForAuthentication;
+    const newRefreshToken = await waitForRefreshToken;
+    await setStoreValue('refreshToken', user.username, newRefreshToken);
+  }
+  L.debug('Steam login successful');
+  return steamUser;
 };

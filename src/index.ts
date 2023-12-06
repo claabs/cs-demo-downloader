@@ -1,13 +1,14 @@
 import PQueue from 'p-queue';
-import { downloadSaveGcpdDemo } from './download.js';
+import { downloadSaveDemo } from './download.js';
 import { getMatches } from './gcpd.js';
-import type { User } from './config.js';
+import type { LoginCredential } from './config.js';
 import { config } from './config.js';
 import { setStoreValue } from './store.js';
 import logger from './logger.js';
 import { appendDemoLog } from './demo-log.js';
+import { getAllUsersMatches } from './steam-gc.js';
 
-const handleGcpdUser = async (user: User, gcpdQueue: PQueue, downloadQueue: PQueue) => {
+const handleGcpdUser = async (user: LoginCredential, gcpdQueue: PQueue, downloadQueue: PQueue) => {
   const L = logger.child({ username: user.username });
   const matches = await gcpdQueue.add(() => getMatches(user), { throwOnTimeout: true });
   if (!matches.length) {
@@ -21,7 +22,7 @@ const handleGcpdUser = async (user: User, gcpdQueue: PQueue, downloadQueue: PQue
   await appendDemoLog(matches);
   const downloadResults = await Promise.all(
     matches.map((match) =>
-      downloadQueue.add(() => downloadSaveGcpdDemo(match), { throwOnTimeout: true }),
+      downloadQueue.add(() => downloadSaveDemo(match), { throwOnTimeout: true }),
     ),
   );
   const failedDownloads = downloadResults.filter((id): id is bigint => id !== null).sort();
@@ -47,7 +48,15 @@ const main = async () => {
   const gcpdQueue = new PQueue({ concurrency: 1, throwOnTimeout: true });
   const downloadQueue = new PQueue({ concurrency: 5, throwOnTimeout: true });
 
-  return Promise.all(config.users.map((user) => handleGcpdUser(user, gcpdQueue, downloadQueue)));
+  if (config.gcpdLogins?.length) {
+    await Promise.all(
+      config.gcpdLogins.map((user) => handleGcpdUser(user, gcpdQueue, downloadQueue)),
+    );
+  }
+
+  if (config.authCodeLogin && config.steamApiKey && config.authCodes?.length) {
+    await getAllUsersMatches(config.authCodes, downloadQueue);
+  }
 };
 
 main().catch((err) => {

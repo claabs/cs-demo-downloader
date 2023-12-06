@@ -2,9 +2,10 @@ import { readJSONSync } from 'fs-extra/esm';
 import path from 'node:path';
 
 export interface Config {
-  authCodes: AuthCodeUser[];
-  users: User[];
-  steamApiKey: string;
+  authCodes?: AuthCodeUser[];
+  gcpdLogins?: LoginCredential[];
+  authCodeLogin?: LoginCredential;
+  steamApiKey?: string;
   logLevel?: string;
   runOnStartup?: boolean;
   runOnce?: boolean;
@@ -18,7 +19,7 @@ export interface AuthCodeUser {
   oldestShareCode: string;
 }
 
-export interface User {
+export interface LoginCredential {
   username: string;
   password: string;
   secret: string;
