@@ -51,13 +51,24 @@ export const getUserShareCodes = async (
 ): Promise<MatchIdentifier[]> => {
   const { steamId64, authCode } = user;
   const L = logger.child({ steamId: steamId64 });
-  const lastShareCode = (await getStoreValue('lastShareCode', steamId64)) ?? user.oldestShareCode;
-  L.debug({ lastShareCode }, 'Getting new share codes');
-  const shareCodes = await getAllNewMatchCodes(steamId64, authCode, lastShareCode, shareCodesQueue);
-  return shareCodes.map((shareCode) => {
-    const { matchId } = decodeMatchShareCode(shareCode);
-    return { shareCode, steamId: steamId64, matchId };
-  });
+  try {
+    const lastShareCode = (await getStoreValue('lastShareCode', steamId64)) ?? user.oldestShareCode;
+    if (!lastShareCode) throw new Error('No share code found');
+    L.debug({ lastShareCode }, 'Getting new share codes');
+    const shareCodes = await getAllNewMatchCodes(
+      steamId64,
+      authCode,
+      lastShareCode,
+      shareCodesQueue,
+    );
+    return shareCodes.map((shareCode) => {
+      const { matchId } = decodeMatchShareCode(shareCode);
+      return { shareCode, steamId: steamId64, matchId };
+    });
+  } catch (err) {
+    L.error({ err });
+    return [];
+  }
 };
 
 export const getAllUsersMatches = async (
@@ -93,7 +104,7 @@ export const getAllUsersMatches = async (
   // robust match response promise handler
   const pendingMatchResponses = new Map<string, MatchRespFn>();
   csgo.on('matchList', (matches) => {
-    L.debug({ matchesLength: matches.length }, 'Recieved matchList event');
+    L.trace({ matchesLength: matches.length }, 'Recieved matchList event');
     matches.forEach((match) => {
       const cb = pendingMatchResponses.get(match.matchid);
       if (cb) {
@@ -106,26 +117,35 @@ export const getAllUsersMatches = async (
 
   L.info({ shareCodes }, 'Requesting games');
   const requestGameQueue = new PQueue({ concurrency: 1 });
-  const resolvedMatches = await Promise.all(
+  const matchFetchResults = await Promise.all(
     shareCodes.map((shareCode) =>
       requestGameQueue.add(
         async () => {
-          const { matchId } = decodeMatchShareCode(shareCode);
-          const [match] = await Promise.all([
-            promiseTimeout(
-              30000,
-              new Promise<GlobalOffensive.Match>((resolve) => {
-                pendingMatchResponses.set(matchId.toString(), resolve);
-              }),
-              new Error(`Error fetching match data for match ${shareCode}`),
-            ),
-            csgo.requestGame(shareCode),
-          ]);
-          return match;
+          try {
+            const { matchId } = decodeMatchShareCode(shareCode);
+            L.debug({ matchId, shareCode }, 'Requesting game data');
+            const [match] = await Promise.all([
+              promiseTimeout(
+                30000,
+                new Promise<GlobalOffensive.Match>((resolve) => {
+                  pendingMatchResponses.set(matchId.toString(), resolve);
+                }),
+                new Error(`Error fetching match data for match ${shareCode}`),
+              ),
+              csgo.requestGame(shareCode),
+            ]);
+            return match;
+          } catch (err) {
+            L.error({ err, shareCode });
+            return undefined;
+          }
         },
         { throwOnTimeout: true },
       ),
     ),
+  );
+  const resolvedMatches = matchFetchResults.filter(
+    (match): match is GlobalOffensive.Match => match !== undefined,
   );
 
   // Quit CS
