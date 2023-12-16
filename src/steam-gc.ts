@@ -52,7 +52,8 @@ export const getUserShareCodes = async (
   const { steamId64, authCode } = user;
   const L = logger.child({ steamId: steamId64 });
   try {
-    const lastShareCode = (await getStoreValue('lastShareCode', steamId64)) ?? user.oldestShareCode;
+    const storeShareCode = await getStoreValue('lastShareCode', steamId64);
+    const lastShareCode = storeShareCode ?? user.oldestShareCode;
     if (!lastShareCode) throw new Error('No share code found');
     L.debug({ lastShareCode }, 'Getting new share codes');
     const shareCodes = await getAllNewMatchCodes(
@@ -61,6 +62,9 @@ export const getUserShareCodes = async (
       lastShareCode,
       shareCodesQueue,
     );
+    if (!storeShareCode) {
+      shareCodes.unshift(lastShareCode);
+    }
     return shareCodes.map((shareCode) => {
       const { matchId } = decodeMatchShareCode(shareCode);
       return { shareCode, steamId: steamId64, matchId };
