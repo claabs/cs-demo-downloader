@@ -88,7 +88,10 @@ export const getAllUsersMatches = async (
   const shareCodes = Array.from(new Set(usersShareCodeIds.flat().map((id) => id.shareCode)));
 
   // Do nothing if no codes
-  if (!shareCodes.length) return;
+  if (!shareCodes.length) {
+    L.info('No new matches to download');
+    return;
+  }
 
   const steamUser = await loginSteamClient(config.authCodeLogin);
   steamUser.on('error', (err) => {
@@ -119,7 +122,7 @@ export const getAllUsersMatches = async (
     });
   });
 
-  L.info({ shareCodes }, 'Requesting games');
+  L.info({ shareCodes }, 'Requesting metadata from game coordinator');
   const requestGameQueue = new PQueue({ concurrency: 1 });
   const matchFetchResults = await Promise.all(
     shareCodes.map((shareCode) =>
@@ -163,6 +166,8 @@ export const getAllUsersMatches = async (
   steamUser.gamesPlayed([], true);
   await waitForQuit;
   steamUser.logOff();
+
+  L.info({ resolvedMatchesCount: resolvedMatches.length }, 'Downloading new matches');
 
   // Convert demo download metadata
   const dlMatches: DownloadableMatch[] = resolvedMatches.map((match) => {

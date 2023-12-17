@@ -46,7 +46,7 @@ export const downloadSaveDemo = async (match: DownloadableMatch): Promise<bigint
       await pipeline(resp.data, bz2(), fs.createWriteStream(filename, 'binary'));
       L.trace({ filename }, 'Demo saved to file');
       await fsp.utimes(filename, match.date, match.date);
-      L.trace({ filename, date: match.date }, 'Update file modified date');
+      L.info({ filename, date: match.date }, 'Demo save complete');
     } else {
       L.info({ filename }, 'File already exists, skipping download');
     }
