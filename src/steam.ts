@@ -6,6 +6,7 @@ import SteamUser from 'steam-user';
 import { getStoreValue, setStoreValue } from './store.js';
 import type { LoginCredential } from './config.js';
 import logger from './logger.js';
+import { promiseTimeout } from './util.js';
 
 export const loginSteamWeb = async (user: LoginCredential): Promise<string[]> => {
   const L = logger.child({ username: user.username });
@@ -25,11 +26,15 @@ export const loginSteamWeb = async (user: LoginCredential): Promise<string[]> =>
     L.trace('Getting Steam Guard auth code');
     const authCode = SteamTotp.getAuthCode(user.secret);
 
-    const waitForAuthentication = new Promise<void>((resolve) => {
-      session.once('authenticated', () => {
-        resolve();
-      });
-    });
+    const waitForAuthentication = promiseTimeout(
+      30000,
+      new Promise<void>((resolve) => {
+        session.once('authenticated', () => {
+          resolve();
+        });
+      }),
+      new Error('Timed out waiting for Steam authenticated'),
+    );
 
     L.debug('Logging into Steam with password');
     await session.startWithCredentials({
@@ -51,17 +56,25 @@ export const loginSteamClient = async (user: LoginCredential): Promise<SteamUser
   const steamUser = new SteamUser();
   const refreshToken = await getStoreValue('refreshToken', user.username);
 
-  const waitForAuthentication = new Promise<void>((resolve) => {
-    steamUser.once('loggedOn', () => {
-      resolve();
-    });
-  });
+  const waitForAuthentication = promiseTimeout(
+    30000,
+    new Promise<void>((resolve) => {
+      steamUser.once('loggedOn', () => {
+        resolve();
+      });
+    }),
+    new Error('Timed out waiting for Steam logged on'),
+  );
 
-  const waitForRefreshToken = new Promise<string>((resolve) => {
-    steamUser.once('refreshToken' as never, (_refreshToken: string) => {
-      resolve(_refreshToken);
-    });
-  });
+  const waitForRefreshToken = promiseTimeout(
+    30000,
+    new Promise<string>((resolve) => {
+      steamUser.once('refreshToken' as never, (_refreshToken: string) => {
+        resolve(_refreshToken);
+      });
+    }),
+    new Error('Timed out waiting for Steam refresh token'),
+  );
 
   if (refreshToken) {
     L.trace('Logging into Steam with refresh token');
