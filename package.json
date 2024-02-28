@@ -20,6 +20,7 @@
     "globaloffensive": "^3.0.0",
     "jsdom": "^23.0.1",
     "p-queue": "^7.4.1",
+    "p-timeout": "^6.1.2",
     "pino": "^8.16.2",
     "pino-pretty": "^10.2.3",
     "steam-session": "^1.7.1",

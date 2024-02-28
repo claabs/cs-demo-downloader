@@ -1,6 +1,7 @@
 import GlobalOffensive from 'globaloffensive';
 import PQueue from 'p-queue';
 import { decodeMatchShareCode } from 'csgo-sharecode';
+import promiseTimeout from 'p-timeout';
 import { config, type AuthCodeUser } from './config.js';
 import logger from './logger.js';
 import { loginSteamClient } from './steam.js';
@@ -8,7 +9,6 @@ import { getAllNewMatchCodes } from './match-history.js';
 import { getStoreValue, setStoreValue } from './store.js';
 import { DownloadableMatch, downloadSaveDemo } from './download.js';
 import { appendDemoLog } from './demo-log.js';
-import { promiseTimeout } from './util.js';
 
 export interface MatchIdentifier {
   shareCode: string;
@@ -76,7 +76,6 @@ export const getAllUsersMatches = async (
     L.error(err);
   });
   const waitForGame = promiseTimeout(
-    30000,
     new Promise<void>((resolve) => {
       steamUser.once('appLaunched', (id) => {
         if (id === 730) {
@@ -84,7 +83,7 @@ export const getAllUsersMatches = async (
         }
       });
     }),
-    new Error('Timed out waiting for game to launch'),
+    { milliseconds: 30000, message: 'Timed out waiting for game to launch' },
   );
   steamUser.gamesPlayed(730, true);
   await waitForGame;
@@ -115,11 +114,13 @@ export const getAllUsersMatches = async (
             L.debug({ matchId, shareCode }, 'Requesting game data');
             const [match] = await Promise.all([
               promiseTimeout(
-                30000,
                 new Promise<GlobalOffensive.Match>((resolve) => {
                   pendingMatchResponses.set(matchId.toString(), resolve);
                 }),
-                new Error(`Error fetching match data for match ${shareCode}`),
+                {
+                  milliseconds: 30000,
+                  message: `Error fetching match data for match ${shareCode}`,
+                },
               ),
               csgo.requestGame(shareCode),
             ]);
@@ -139,7 +140,6 @@ export const getAllUsersMatches = async (
 
   // Quit CS
   const waitForQuit = promiseTimeout(
-    30000,
     new Promise<void>((resolve) => {
       steamUser.once('appQuit', (id) => {
         if (id === 730) {
@@ -147,7 +147,7 @@ export const getAllUsersMatches = async (
         }
       });
     }),
-    new Error('Timed out waiting for game to quit'),
+    { milliseconds: 30000, message: 'Timed out waiting for game to quit' },
   );
   steamUser.gamesPlayed([], true);
   await waitForQuit;
