@@ -1,4 +1,4 @@
-/* eslint-disable import/prefer-default-export */
+/* eslint-disable import-x/prefer-default-export */
 import { LoginSession, EAuthTokenPlatformType } from 'steam-session';
 import SteamTotp from 'steam-totp';
 import SteamUser from 'steam-user';

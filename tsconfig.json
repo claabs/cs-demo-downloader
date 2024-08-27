@@ -24,7 +24,8 @@
   },
   "include": [
     "**/*.ts",
-    ".*.cjs",
+    ".*.*js",
+    "*.config.*js",
   ],
   "exclude": [
     "node_modules",

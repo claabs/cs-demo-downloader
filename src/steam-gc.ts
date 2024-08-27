@@ -157,8 +157,9 @@ export const getAllUsersMatches = async (
 
   // Convert demo download metadata
   const dlMatches: DownloadableMatch[] = resolvedMatches.map((match) => {
-    const playerCount = match.roundstatsall[0]?.reservation.account_ids.filter((id) => id !== 0)
-      .length;
+    const playerCount = match.roundstatsall[0]?.reservation.account_ids.filter(
+      (id) => id !== 0,
+    ).length;
     const isWingman = playerCount && playerCount <= 4;
     const isPremier = match.roundstatsall[0]?.b_switched_teams; // null for comp, true for premier
     let type: string;

@@ -5,7 +5,7 @@ const logger = pino({
   transport: {
     target: 'pino-pretty',
     options: {
-      translateTime: `SYS:standard`,
+      translateTime: 'SYS:standard',
     },
   },
   redact: ['config.users[*].password', 'config.users[*].secret'],
