@@ -17,6 +17,7 @@ export interface DownloadableMatch {
 
 const pipeline = util.promisify(stream.pipeline);
 const demosDir = process.env['DEMOS_DIR'] || 'demos';
+const tempDemosDir = path.join(demosDir, 'temp');
 
 export const gcpdUrlToFilename = (url: string, suffix?: string): string => {
   // http://replay129.valve.net/730/003638895521671676017_1102521424.dem.bz2
@@ -36,19 +37,25 @@ export const gcpdUrlToFilename = (url: string, suffix?: string): string => {
 export const downloadSaveDemo = async (match: DownloadableMatch): Promise<bigint | null> => {
   try {
     if (!match.url) throw new Error('Match download URL missing');
-    await fsx.mkdirp(demosDir);
-    const filename = path.join(demosDir, gcpdUrlToFilename(match.url, match.type));
-    const exists = await fsx.exists(filename);
+
+    await fsx.mkdirp(tempDemosDir);
+    const tempFilename = path.join(tempDemosDir, gcpdUrlToFilename(match.url, match.type));
+
+    await fsx.mkdirp(demosDir); // redundant, but added in-case the temp directory is changed in the future to not be nested within the demos directory
+    const completedFilename = path.join(demosDir, gcpdUrlToFilename(match.url, match.type));
+
+    const exists = await fsx.exists(completedFilename);
     if (!exists) {
       L.trace({ url: match.url }, 'Downloading demo');
       const resp = await axios.get<stream.Duplex>(match.url, { responseType: 'stream' });
       L.trace({ url: match.url }, 'Demo download complete');
-      await pipeline(resp.data, bz2(), fs.createWriteStream(filename, 'binary'));
-      L.trace({ filename }, 'Demo saved to file');
-      await fsp.utimes(filename, match.date, match.date);
-      L.info({ filename, date: match.date }, 'Demo save complete');
+      await pipeline(resp.data, bz2(), fs.createWriteStream(tempFilename, 'binary'));
+      L.trace({ filename: tempFilename }, 'Demo saved to file');
+      await fsp.rename(tempFilename, completedFilename);
+      await fsp.utimes(completedFilename, match.date, match.date);
+      L.info({ filename: completedFilename, date: match.date }, 'Demo save complete');
     } else {
-      L.info({ filename }, 'File already exists, skipping download');
+      L.info({ filename: completedFilename }, 'File already exists, skipping download');
     }
     return null;
   } catch (err) {
