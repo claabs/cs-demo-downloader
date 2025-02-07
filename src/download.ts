@@ -18,7 +18,6 @@ export interface DownloadableMatch {
 const pipeline = util.promisify(stream.pipeline);
 const demosDir = process.env['DEMOS_DIR'] || 'demos';
 const tempDemosDir = path.join(demosDir, 'temp');
-const completedDemosDir = path.join(demosDir, 'completed');
 
 export const gcpdUrlToFilename = (url: string, suffix?: string): string => {
   // http://replay129.valve.net/730/003638895521671676017_1102521424.dem.bz2
@@ -42,8 +41,8 @@ export const downloadSaveDemo = async (match: DownloadableMatch): Promise<bigint
     await fsx.mkdirp(tempDemosDir);
     const tempFilename = path.join(tempDemosDir, gcpdUrlToFilename(match.url, match.type));
 
-    await fsx.mkdirp(completedDemosDir);
-    const completedFilename = path.join(completedDemosDir, gcpdUrlToFilename(match.url, match.type));
+    await fsx.mkdirp(demosDir); // redundant, but added in-case the temp directory is changed in the future to not be nested within the demos directory
+    const completedFilename = path.join(demosDir, gcpdUrlToFilename(match.url, match.type));
 
     const exists = await fsx.exists(completedFilename);
     if (!exists) {
