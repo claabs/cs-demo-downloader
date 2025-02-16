@@ -22,8 +22,11 @@ export const loginSteamWeb = async (user: LoginCredential): Promise<string[]> =>
       L.error({ err }, 'Error setting refresh token');
     }
   } else {
-    L.trace('Getting Steam Guard auth code');
-    const authCode = SteamTotp.getAuthCode(user.secret);
+    let authCode: string | undefined;
+    if (user.secret) {
+      L.trace('Getting Steam Guard auth code');
+      authCode = SteamTotp.getAuthCode(user.secret);
+    }
 
     const waitForAuthentication = promiseTimeout(
       new Promise<void>((resolve) => {
@@ -71,7 +74,11 @@ export const loginSteamClient = async (user: LoginCredential): Promise<SteamUser
     await waitForAuthentication;
   } else {
     L.trace('Getting Steam Guard auth code');
-    const authCode = SteamTotp.getAuthCode(user.secret);
+    let authCode: string | undefined;
+    if (user.secret) {
+      L.trace('Getting Steam Guard auth code');
+      authCode = SteamTotp.getAuthCode(user.secret);
+    }
 
     const waitForRefreshToken = promiseTimeout(
       new Promise<string>((resolve) => {
