@@ -1,9 +1,15 @@
 name: MultiArchDockerBuild
 
+permissions:
+  packages: write
+
 on:
   push:
     branches:
       - master
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * 1"
 
 jobs:
   build_multi_arch_image:
@@ -44,5 +50,5 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           platforms: linux/amd64,linux/arm64
-          cache-from: type=gha,scope=${{ github.workflow }}
-          cache-to: type=gha,mode=max,scope=${{ github.workflow }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

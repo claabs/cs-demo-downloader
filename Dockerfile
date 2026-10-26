@@ -14,7 +14,8 @@ FROM base AS build
 COPY package*.json tsconfig.json ./
 
 # Add dev deps
-RUN npm ci
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci
 
 # Copy source code
 COPY src src
@@ -26,7 +27,8 @@ RUN npm run build
 ########
 FROM base AS deploy
 
-RUN apk add --no-cache \
+RUN --mount=type=cache,target=/var/cache/apk \
+    apk add --update-cache \
     jq \
     supercronic \
     tini \
@@ -37,7 +39,8 @@ COPY entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN ln -s /usr/local/bin/docker-entrypoint.sh / 
 
 COPY package*.json ./
-RUN npm ci --omit=dev
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --omit=dev
 
 # Steal compiled code from build image
 COPY --from=build /usr/app/dist dist
